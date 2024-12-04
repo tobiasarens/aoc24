@@ -1,8 +1,6 @@
 
 import Data.Map
 
-data Cell = X | M | A | S | P
-
 data Dir = RGT | LFT | UP | DWN | TR | TL | BR | BL
 
 instance Eq Dir where
@@ -16,32 +14,35 @@ instance Eq Dir where
     (==) BR BR = True
     (==) _ _ = False
 
-instance Show Cell where
-    show X = show 'X'
-    show M = show 'M'
-    show A = show 'A'
-    show S = show 'S'
-    show P = show '.'
-
 type Grid = Map Int (Map Int Char)
 
 
 part1 = do
-    contents <- readFile "s.txt"
+    contents <- readFile "l.txt"
     -- print . map readInt . words $ contents
     let inputs = lines contents
-    print inputs
+    --print inputs
 
     let grid = parseInput inputs
-    print grid
+    --print grid
+    let res = [countMatches grid (x, y) | x <- keys grid, y <- keys (grid ! x)]
+    --print res
+    print $ sum res
     return ()
 
-toCell :: Char -> Cell
-toCell 'X' = X
-toCell 'M' = M
-toCell 'A' = A
-toCell 'S' = S
-toCell _ = P
+    
+part2 = do
+    contents <- readFile "l.txt"
+    -- print . map readInt . words $ contents
+    let inputs = lines contents
+    --print inputs
+
+    let grid = parseInput inputs
+    --print grid
+    let res = [checkMatch2 grid (x, y) | x <- keys grid, y <- keys (grid ! x)] :: [Bool]
+    --print res
+    print $ sum $ Prelude.map fromEnum res
+    return ()
 
 nextChar :: Char -> Char
 nextChar 'X' = 'M'
@@ -51,6 +52,7 @@ nextChar _ = '.'
 
 parseLine :: String -> Map Int Char
 parseLine [] = empty
+parseLine "\r" = empty
 parseLine (s:ss) = insert (length ss) (s) (parseLine ss)
 
 parseInput :: [String] -> Grid
@@ -73,5 +75,20 @@ next (x, y) BL = (x - 1, y + 1)
 checkMatch :: Grid -> (Int, Int) -> Dir -> Char -> Bool
 checkMatch _ _ _ '.' = False
 checkMatch grid (x, y) _ 'S' = (validIndex grid (x,y)) && (grid ! x) ! y == 'S'
-checkMatch grid pos dir char = checkMatch grid (next pos dir) dir (nextChar char)
+checkMatch grid (x, y) dir char = (validIndex grid (x, y)) && (((grid ! x) ! y )== char) && checkMatch grid (next (x, y) dir) dir (nextChar char)
 
+countMatches :: Grid -> (Int, Int) -> Int
+countMatches grid pos = sum $ Prelude.map fromEnum [checkMatch grid pos dir 'X' | dir <- [UP, DWN, LFT, RGT, TL, TR, BR, BL]]
+
+
+checkMatch2 :: Grid -> (Int, Int) -> Bool
+checkMatch2 grid pos = (charAtIs grid pos 'A') && ( ((charAtIs grid (next pos TL) 'M') && (charAtIs grid (next pos BR) 'S')) || ((charAtIs grid (next pos TL) 'S') && (charAtIs grid (next pos BR) 'M')) )
+                                                && ( ((charAtIs grid (next pos TR) 'M') && (charAtIs grid (next pos BL) 'S')) || ((charAtIs grid (next pos TR) 'S') && (charAtIs grid (next pos BL) 'M')))
+
+charAtIs :: Grid -> (Int, Int) -> Char -> Bool
+charAtIs grid pos char = charAt grid pos == Just char
+
+charAt :: Grid -> (Int, Int) -> Maybe Char
+charAt grid (x, y) 
+    | (validIndex grid (x, y)) = Just ((grid ! x) ! y)
+    | otherwise = Nothing

@@ -1,20 +1,25 @@
-import Data.Map (Map, empty, alter, keys)
+import Data.Map (Map, empty, alter, keys, union, assocs, map, elems, unionWith)
 
 part1 = do
     contents <- readFile "l.txt"
-    let stones = map (toInt) $ words contents
+    let stones = Prelude.map (toInt) $ words contents
     let after = applyN 25 blink stones
     print $ length after
 
 part2 = do
     contents <- readFile "l.txt"
-    let stones = map (toInt) $ words contents
+    let stones = Prelude.map (toInt) $ words contents
     let after = applyN 75 blinkMap $ collapse stones
-    print $ length after
+    print $ mapsum after
 
+
+mapsum :: Map Int Int -> Int
+mapsum m = sum $ elems m
 
 blinkMap :: Map Int Int -> Map Int Int
-blinkMap m = collapse . blink $ keys m
+blinkMap m =  foldl unionw empty [(Data.Map.map (snd mm*) . collapse . blink $ [fst mm]) | mm <- assocs m]
+    where   
+        unionw = unionWith (+)
 
 applyN :: Int -> (a -> a) -> a -> a
 applyN 0 _ a = a
